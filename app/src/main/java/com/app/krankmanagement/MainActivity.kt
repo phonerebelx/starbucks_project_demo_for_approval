@@ -1,5 +1,6 @@
 package com.app.krankmanagement
 
+import EmployeeHomeScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,8 +23,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.app.krankmanagement.ui.theme.ShiftBuddyTheme
 import com.app.krankmanagement.userInterface.AuthScreen
-import com.app.krankmanagement.userInterface.EmployeeHomeScreen
+
 import com.app.krankmanagement.userInterface.ManagerHomeScreen
+import com.app.krankmanagement.userInterface.StarbucksWelcomeScreen
 import com.app.krankmanagement.viewModel.AuthViewModel
 import com.app.krankmanagement.viewModel.ManagerViewModel
 
@@ -42,14 +44,45 @@ class MainActivity : ComponentActivity() {
         val navController = rememberNavController()
         val authViewModel: AuthViewModel = viewModel()
 
-        NavHost(navController, startDestination = "auth") {
-            composable("auth") {
-                AuthScreen(viewModel = authViewModel) { user ->
-                    val route = if (user.role == "manager") "managerHome" else "employeeHome/${user.uid}"
-                    navController.navigate(route) {
-                        popUpTo("auth") { inclusive = true }
+        NavHost(navController, startDestination = "onboarding") {
+            composable("onboarding") {
+                StarbucksWelcomeScreen(
+                    onLoginClick = {
+                        navController.navigate("auth?isRegistering=false") {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
+                    },
+                    onRegisterClick = {
+                        navController.navigate("auth?isRegistering=true") {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(
+                route = "auth?isRegistering={isRegistering}",
+                arguments = listOf(navArgument("isRegistering") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                })
+            ) {
+                val isRegistering = it.arguments?.getBoolean("isRegistering") ?: false
+                AuthScreen(viewModel = authViewModel, isRegister = isRegistering) { user ->
+                    val isManager = user.email == "ali@gmail.com"
+                    if (isManager) {
+                        navController.navigate("managerHome") {
+                            popUpTo("auth") { inclusive = true }
+                        }
+                    } else {
+                        navController.navigate("employeeHome/${user.uid}") {
+                            popUpTo("auth") { inclusive = true }
+                        }
                     }
                 }
+            }
+
+            composable("managerHome") {
                 val viewModel: ManagerViewModel = viewModel()
                 ManagerHomeScreen(viewModel = viewModel)
             }
@@ -64,7 +97,6 @@ class MainActivity : ComponentActivity() {
         }
 
     }
-
 
 }
 

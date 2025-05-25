@@ -21,7 +21,7 @@ import com.app.krankmanagement.viewModel.ManagerViewModel
 @Composable
 fun ManagerHomeScreen(viewModel: ManagerViewModel) {
     Column(modifier = Modifier.padding(16.dp)) {
-//        Text("Pending Sick Leave Requests", style = MaterialTheme.typography.headlineSmall)
+        Text("Pending Sick Leave Requests", style = MaterialTheme.typography.headlineSmall)
 
         LazyColumn {
             items(viewModel.pendingLeaves) { leave ->
@@ -45,7 +45,7 @@ fun ManagerHomeScreen(viewModel: ManagerViewModel) {
         }
 
         Spacer(Modifier.height(32.dp))
-//        Text("Pending Shift Takeover Requests", style = MaterialTheme.typography.headlineSmall)
+        Text("Pending Shift Takeover Requests", style = MaterialTheme.typography.headlineSmall)
 
         LazyColumn {
             items(viewModel.pendingShifts) { shift ->

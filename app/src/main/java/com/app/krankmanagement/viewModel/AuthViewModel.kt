@@ -1,5 +1,6 @@
 package com.app.krankmanagement.viewModel
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.app.krankmanagement.datamodel.UserProfile
@@ -17,14 +18,16 @@ class AuthViewModel : ViewModel() {
 
     fun register(email: String, password: String, role: String) {
         loading.value = true
+
         auth.createUserWithEmailAndPassword(email, password).addOnSuccessListener {
             val uid = it.user?.uid ?: return@addOnSuccessListener
             val userProfile = UserProfile(uid, email, role)
             db.collection("users").document(uid).set(userProfile).addOnSuccessListener {
                 currentUser.value = userProfile
-                loading.value = false
             }
+            loading.value = false
         }.addOnFailureListener {
+            Log.d("register: ", "addOnFailureListener")
             error.value = it.localizedMessage
             loading.value = false
         }
@@ -36,6 +39,7 @@ class AuthViewModel : ViewModel() {
             val uid = it.user?.uid ?: return@addOnSuccessListener
             db.collection("users").document(uid).get().addOnSuccessListener { doc ->
                 val user = doc.toObject(UserProfile::class.java)
+                Log.d("login: ",user?.email ?: "not found")
                 currentUser.value = user
                 loading.value = false
             }
