@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "73166914834",
+    "project_id": "shiftbuddy-a8bd0",
+    "storage_bucket": "shiftbuddy-a8bd0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73166914834:android:fd3d3010281112354a1fcb",
+        "android_client_info": {
+          "package_name": "com.app.krankmanagement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOZguY59xWSHsG1AMKoR4LdMRdlIZeoso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
