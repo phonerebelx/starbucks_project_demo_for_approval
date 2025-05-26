@@ -1,9 +1,7 @@
 package com.app.krankmanagement.datamodel
 
-import com.google.firebase.Timestamp
-
-data class Shift(
-    val id: String = "",
+data class TakeOverShift(
+    val uid: String = "",
     val originalUserId: String = "",
     val fromDate: String = "",
     val toDate: String = "",

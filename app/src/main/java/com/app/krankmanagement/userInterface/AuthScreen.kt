@@ -26,6 +26,7 @@ import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -48,7 +49,12 @@ import com.app.krankmanagement.viewModel.AuthViewModel
 fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (UserProfile) -> Unit) {
     var email by remember { mutableStateOf("ali@gmail.com") }
     var password by remember { mutableStateOf("123456") }
-    var role by remember { mutableStateOf("manager") }
+    var role by remember { mutableStateOf("employee") }
+
+
+    val user by viewModel.user.collectAsState()
+
+
 
     if (viewModel.currentUser.value != null) {
 

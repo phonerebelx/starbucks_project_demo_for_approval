@@ -88,4 +88,6 @@ dependencies {
 
     // Accompanist for system UI and permissions
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.30.1")
+    implementation("com.google.firebase:firebase-database-ktx:20.2.0")
+    implementation("com.google.firebase:firebase-auth-ktx:22.1.0")
 }
