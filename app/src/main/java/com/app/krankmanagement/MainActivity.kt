@@ -1,7 +1,12 @@
 package com.app.krankmanagement
 
 import EmployeeHomeScreen
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,10 +33,14 @@ import com.app.krankmanagement.userInterface.ManagerHomeScreen
 import com.app.krankmanagement.userInterface.StarbucksWelcomeScreen
 import com.app.krankmanagement.viewModel.AuthViewModel
 import com.app.krankmanagement.viewModel.ManagerViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        createNotificationChannel(this)
         enableEdgeToEdge()
         setContent {
             ShiftBuddyApp()
@@ -69,6 +78,19 @@ class MainActivity : ComponentActivity() {
             ) {
                 val isRegistering = it.arguments?.getBoolean("isRegistering") ?: false
                 AuthScreen(viewModel = authViewModel, isRegister = isRegistering) { user ->
+                    FirebaseMessaging.getInstance().token
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Log.d("ShiftBuddyApp: ",task.result)
+                                val token = task.result
+                                FirebaseFirestore.getInstance()
+                                    .collection("users")
+                                    .document(user.uid)
+                                    .set(mapOf("fcmToken" to token), SetOptions.merge())
+
+                            }
+                        }
+
                     val isManager = user.email == "ali@gmail.com"
                     if (isManager) {
                         navController.navigate("managerHome") {
@@ -97,6 +119,21 @@ class MainActivity : ComponentActivity() {
         }
 
     }
+
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "General Notifications"
+            val descriptionText = "Channel for FCM notifications"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val channel = NotificationChannel("my_channel_id", name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
 
 }
 
