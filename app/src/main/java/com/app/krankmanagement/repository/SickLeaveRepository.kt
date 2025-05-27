@@ -1,5 +1,6 @@
 package com.app.krankmanagement.repository
 
+import android.util.Log
 import com.app.krankmanagement.datamodel.SickLeaveRequest
 import com.app.krankmanagement.datamodel.TakeOverShift
 import com.app.krankmanagement.datamodel.UserProfile
@@ -20,8 +21,8 @@ class SickLeaveRepository {
     val sickUserState: StateFlow<SickLeaveRequest?> get() = _sickUserState
 
     fun submitLeave(request: SickLeaveRequest) {
-        val key = request.uid
-        sickLeavesRef.child(key).setValue(request)
+        val newKey = sickLeavesRef.push().key ?: return
+        sickLeavesRef.child(newKey).setValue(request)
             .addOnSuccessListener {
                 _sickUserState.value = request
             }
@@ -29,6 +30,7 @@ class SickLeaveRepository {
                 _sickUserState.value = null
             }
     }
+
 
     fun loadUserLeaves(userId: String, onResult: (List<SickLeaveRequest>) -> Unit) {
 
@@ -49,15 +51,45 @@ class SickLeaveRepository {
             })
     }
 
+
     fun loadAllLeaves(onResult: (List<SickLeaveRequest>) -> Unit) {
+        val database = FirebaseDatabase.getInstance()
+        val sickLeavesRef = database.getReference("sickLeaves")
+        val usersRef = database.getReference("users")
+
         sickLeavesRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+            override fun onDataChange(sickLeavesSnapshot: DataSnapshot) {
                 val leaves = mutableListOf<SickLeaveRequest>()
-                for (childSnapshot in snapshot.children) {
-                    val leave = childSnapshot.getValue(SickLeaveRequest::class.java)
-                    if (leave != null) leaves.add(leave)
-                }
-                onResult(leaves)
+                val userEmailMap = mutableMapOf<String, String>()
+
+                usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(usersSnapshot: DataSnapshot) {
+
+                        for (userSnapshot in usersSnapshot.children) {
+                            val uid = userSnapshot.key
+                            val email = userSnapshot.child("email").getValue(String::class.java)
+                            if (uid != null && email != null) {
+                                userEmailMap[uid] = email
+                            }
+                        }
+
+
+                        for (leaveSnapshot in sickLeavesSnapshot.children) {
+                            val leave = leaveSnapshot.getValue(SickLeaveRequest::class.java)
+                            if (leave != null) {
+                                leave.id = leaveSnapshot.key ?: ""
+                                leave.mail = userEmailMap[leave.uid] ?: ""
+                                leaves.add(leave)
+                            }
+                        }
+
+                        onResult(leaves)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        onResult(emptyList())
+                    }
+                })
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -66,24 +98,90 @@ class SickLeaveRepository {
         })
     }
 
+//    fun loadAllLeaves(onResult: (List<SickLeaveRequest>) -> Unit) {
+//        sickLeavesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//
+//                val leaves = mutableListOf<SickLeaveRequest>()
+//                for (childSnapshot in snapshot.children) {
+//                    val leave = childSnapshot.getValue(SickLeaveRequest::class.java)
+//                    if (leave != null) {
+//                        leave.id = childSnapshot.key.orEmpty()
+//                        leaves.add(leave)
+//                    }
+//                }
+//                onResult(leaves)
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                onResult(emptyList())
+//            }
+//        })
+//    }
+
+//    fun loadAllTakeoverLeaves(onResult: (List<TakeOverShift>) -> Unit) {
+//        val database = FirebaseDatabase.getInstance()
+//        val takeOverRef = database.getReference("takeOver")
+//
+//        takeOverRef.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                val list = mutableListOf<TakeOverShift>()
+//                for (child in snapshot.children) {
+//                    val request = child.getValue(TakeOverShift::class.java)
+//                    request?.let { list.add(it) }
+//                }
+//                onResult(list)
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                // Handle error
+//            }
+//        })
+//    }
+
     fun loadAllTakeoverLeaves(onResult: (List<TakeOverShift>) -> Unit) {
         val database = FirebaseDatabase.getInstance()
         val takeOverRef = database.getReference("takeOver")
+        val usersRef = database.getReference("users")
 
         takeOverRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+            override fun onDataChange(takeOverSnapshot: DataSnapshot) {
                 val list = mutableListOf<TakeOverShift>()
-                for (child in snapshot.children) {
-                    val request = child.getValue(TakeOverShift::class.java)
-                    request?.let { list.add(it) }
-                }
-                onResult(list)
+                val userEmailMap = mutableMapOf<String, String>()
+
+                usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(usersSnapshot: DataSnapshot) {
+                        for (userSnapshot in usersSnapshot.children) {
+                            val uid = userSnapshot.key
+                            val email = userSnapshot.child("email").getValue(String::class.java)
+                            if (uid != null && email != null) {
+                                userEmailMap[uid] = email
+                            }
+                        }
+
+                        for (child in takeOverSnapshot.children) {
+                            val request = child.getValue(TakeOverShift::class.java)
+                            if (request != null) {
+                                request.uid = child.key ?: ""
+                                request.mail = userEmailMap[request.originalUserId] ?: ""
+                                list.add(request)
+                            }
+                        }
+
+                        onResult(list)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        onResult(emptyList())
+                    }
+                })
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
+                onResult(emptyList())
             }
         })
     }
+
 }
 

@@ -58,6 +58,13 @@ fun PendingTakeOverRequest(modifier: Modifier = Modifier,viewModel: SickLeaveVie
                     ) {
                         Column(Modifier.padding(12.dp)) {
                             Text(
+                                "Employee Mail: ${leave.mail}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
                                 "From: ${leave.fromDate}",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,

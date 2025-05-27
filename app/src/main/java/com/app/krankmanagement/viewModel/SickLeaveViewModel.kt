@@ -76,15 +76,16 @@ class SickLeaveViewModel : ViewModel() {
             }
     }
 
-    fun updateLeaveStatus(uid: String, newStatus: String) {
+    fun updateLeaveStatus(leaveId: String, newStatus: String) {
         loading.value = true
 
-        val database = FirebaseDatabase.getInstance()
-        val ref = database.getReference("sickLeaves").child(uid).child("status")
+        val ref = FirebaseDatabase.getInstance().getReference("sickLeaves")
+            .child(leaveId)
+            .child("status")
+
         ref.setValue(newStatus)
             .addOnSuccessListener {
                 loadAllUserLeaves()
-
                 loading.value = false
             }
             .addOnFailureListener {

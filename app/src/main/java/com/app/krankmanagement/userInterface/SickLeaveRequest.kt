@@ -60,6 +60,13 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
                 ) {
                     Column(Modifier.padding(12.dp)) {
                         Text(
+                            "Employee Mail: ${leave.mail}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
                             "From: ${leave.fromDate}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
@@ -86,7 +93,7 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
                             ) {
                                 Button(
                                     onClick = {
-                                        viewModel.updateLeaveStatus(leave.uid,"Accepted")
+                                        viewModel.updateLeaveStatus(leave.id,"Accepted")
                                     },
                                     shape = RoundedCornerShape(50), // Pill shape
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), // Green
@@ -99,7 +106,7 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
 
                                 Button(
                                     onClick = {
-                                        viewModel.updateLeaveStatus(leave.uid,"Rejected")
+                                        viewModel.updateLeaveStatus(leave.id,"Rejected")
                                     },
                                     shape = RoundedCornerShape(50), // Pill shape
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)), // Red

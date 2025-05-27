@@ -1,7 +1,10 @@
 package com.app.krankmanagement.datamodel
 
+import com.google.firebase.Timestamp
+
 data class TakeOverShift(
-    val uid: String = "",
+    var uid: String = "",
+    var mail: String = "",
     val originalUserId: String = "",
     val fromDate: String = "",
     val toDate: String = "",
