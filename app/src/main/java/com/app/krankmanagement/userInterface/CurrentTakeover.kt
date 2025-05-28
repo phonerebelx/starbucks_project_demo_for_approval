@@ -27,16 +27,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.krankmanagement.datamodel.SickLeaveRequest
 import com.app.krankmanagement.viewModel.SickLeaveViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
 @Composable
-fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
-
+    fun CurrentTakeover(modifier: Modifier = Modifier,viewModel: SickLeaveViewModel) {
     LaunchedEffect(true) {
-        viewModel.loadAllUserLeaves()
+        viewModel.loadAllAllTakeOver()
     }
     Spacer(modifier = Modifier.height(30.dp))
 
@@ -48,13 +46,13 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Text("All Sick Leave Requests", style = MaterialTheme.typography.titleMedium)
+        Text("All Take Over Requests", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(30.dp))
 
         SwipeRefresh(
             state = swipeRefreshState,
             onRefresh = {
-                viewModel.loadAllUserLeaves()
+                viewModel.loadAllAllTakeOver()
             }
         ) {
             if (isRefreshing) {
@@ -68,7 +66,9 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
                 }
             } else {
                 LazyColumn {
-                    items(viewModel.leaveAllRequests) { leave ->
+
+                    items(viewModel.allTakeoverLeave) { leave ->
+                        viewModel.getuserDetail(leave.originalUserId)
                         ElevatedCard(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -80,7 +80,7 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
                         ) {
                             Column(Modifier.padding(12.dp)) {
                                 Text(
-                                    "Employee Mail: ${leave.mail}",
+                                    "UID: ${leave.originalUserId}",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier
@@ -102,41 +102,7 @@ fun SickLeaveRequest(viewModel: SickLeaveViewModel) {
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                 )
-                                if (leave.status == "Accepted" || leave.status == "Rejected") {
 
-                                } else {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(16.dp)
-                                    ) {
-                                        Button(
-                                            onClick = {
-                                                viewModel.updateLeaveStatus(leave.id, "Accepted")
-                                            },
-                                            shape = RoundedCornerShape(50),
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(48.dp)
-                                        ) {
-                                            Text(text = "Accept", color = Color.White)
-                                        }
-
-                                        Button(
-                                            onClick = {
-                                                viewModel.updateLeaveStatus(leave.id, "Rejected")
-                                            },
-                                            shape = RoundedCornerShape(50),
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336)),
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(48.dp)
-                                        ) {
-                                            Text(text = "Reject", color = Color.White)
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

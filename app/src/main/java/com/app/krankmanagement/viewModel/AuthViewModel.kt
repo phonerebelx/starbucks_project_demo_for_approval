@@ -128,7 +128,9 @@ class AuthViewModel : ViewModel() {
             loading.value = false
         }
     }
-
+    fun clearUser() {
+        currentUser.value = null
+    }
 
 //    fun login(email: String, password: String) {
 //        loading.value = true

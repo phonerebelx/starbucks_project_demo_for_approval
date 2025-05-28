@@ -6,6 +6,7 @@ import com.app.krankmanagement.datamodel.TakeOverShift
 import com.app.krankmanagement.datamodel.UserProfile
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,28 @@ class SickLeaveRepository {
             .addOnFailureListener {
                 _sickUserState.value = null
             }
+    }
+    fun getAllTakeoverLeavesFromFirebase(
+        onResult: (List<TakeOverShift>) -> Unit
+    ) {
+        database.getReference("takeOver").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val takeOverLeaves = mutableListOf<TakeOverShift>()
+
+                for (child in snapshot.children) {
+                    val shift = child.getValue(TakeOverShift::class.java)
+                    if (shift != null && shift.uid != shift.originalUserId) {
+                        takeOverLeaves.add(shift)
+                    }
+                }
+
+                onResult(takeOverLeaves)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                onResult(emptyList())
+            }
+        })
     }
 
 
@@ -138,6 +161,22 @@ class SickLeaveRepository {
 //            }
 //        })
 //    }
+
+    fun getEmailForUserId(userId: String, onResult: (String?) -> Unit) {
+        val userRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val email = snapshot.child("email").getValue(String::class.java)
+                onResult(email)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                onResult(null)
+            }
+        })
+    }
+
 
     fun loadAllTakeoverLeaves(onResult: (List<TakeOverShift>) -> Unit) {
         val database = FirebaseDatabase.getInstance()

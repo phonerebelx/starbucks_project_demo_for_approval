@@ -1,6 +1,6 @@
 package com.app.krankmanagement
 import android.Manifest
-import EmployeeHomeScreen
+import com.app.krankmanagement.userInterface.EmployeeHomeScreen
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -9,24 +9,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.internal.composableLambda
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.app.krankmanagement.ui.theme.ShiftBuddyTheme
 import com.app.krankmanagement.userInterface.AuthScreen
 
 import com.app.krankmanagement.userInterface.ManagerHomeScreen
@@ -80,14 +70,10 @@ class MainActivity : ComponentActivity() {
             composable("onboarding") {
                 StarbucksWelcomeScreen(
                     onLoginClick = {
-                        navController.navigate("auth?isRegistering=false") {
-                            popUpTo("onboarding") { inclusive = true }
-                        }
+                        navController.navigate("auth?isRegistering=false")
                     },
                     onRegisterClick = {
-                        navController.navigate("auth?isRegistering=true") {
-                            popUpTo("onboarding") { inclusive = true }
-                        }
+                        navController.navigate("auth?isRegistering=true")
                     }
                 )
             }
@@ -116,7 +102,8 @@ class MainActivity : ComponentActivity() {
 
             composable("managerHome") {
                 val viewModel: ManagerViewModel = viewModel()
-                ManagerHomeScreen(viewModel = viewModel)
+                ManagerHomeScreen(viewModel = viewModel,navController)
+
             }
 
             composable(
@@ -124,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 arguments = listOf(navArgument("userId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
-                EmployeeHomeScreen(userId = userId)
+                EmployeeHomeScreen(userId = userId, viewmodel = viewModel(), navController = navController)
             }
         }
 

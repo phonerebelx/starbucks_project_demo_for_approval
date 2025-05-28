@@ -43,12 +43,24 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+
 @Composable
 fun SickLeaveScreen(viewModel: SickLeaveViewModel, userId: String) {
     var fromDate by remember { mutableStateOf<LocalDate?>(null) }
     var toDate by remember { mutableStateOf<LocalDate?>(null) }
 
     val context = LocalContext.current
+
+    // This is observed for real-time UI updates
+    val isRefreshing by remember { viewModel.loading }
+
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing = isRefreshing)
+
+    LaunchedEffect(Unit) {
+        viewModel.loadUserLeaves(userId)
+    }
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
@@ -71,29 +83,24 @@ fun SickLeaveScreen(viewModel: SickLeaveViewModel, userId: String) {
             onClick = {
                 if (fromDate != null && toDate != null) {
                     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                    val fromDateStr = fromDate?.format(formatter) ?: ""
-                    val toDateStr = toDate?.format(formatter) ?: ""
+                    val fromDateStr = fromDate!!.format(formatter)
+                    val toDateStr = toDate!!.format(formatter)
+
                     viewModel.submitLeave(fromDateStr, toDateStr, userId)
-                    // Reload the data after submission
                     viewModel.loadUserLeaves(userId)
-                    // Clear the selected dates
+
                     fromDate = null
                     toDate = null
+
                     Toast.makeText(context, "Request submitted", Toast.LENGTH_SHORT).show()
                 }
             },
-
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00704A)),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .border(
-                    width = 2.dp,
-                    color = Color(0xFF00704A),
-                    shape = RoundedCornerShape(12.dp)
-                ),
-
+                .border(2.dp, Color(0xFF00704A), RoundedCornerShape(12.dp)),
             enabled = fromDate != null && toDate != null
         ) {
             Text("Submit")
@@ -102,47 +109,45 @@ fun SickLeaveScreen(viewModel: SickLeaveViewModel, userId: String) {
         Divider(Modifier.padding(vertical = 16.dp))
 
         Text("Your Sick Leave Requests", style = MaterialTheme.typography.titleMedium)
-        if (viewModel.loading.value) {
-            CircularProgressIndicator(color = Color(0xFF00704A))
-        } else {
-            LazyColumn {
-                items(viewModel.leaveRequests) { leave ->
-                    ElevatedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.White
-                        )
 
-
-                    ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(
-                                "From: ${leave.fromDate}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text("To: ${leave.toDate}", fontSize = 14.sp,fontWeight = FontWeight.Bold,
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text("Status: ${leave.status.capitalize()}", fontSize = 14.sp,fontWeight = FontWeight.Bold,
-                            )
+        SwipeRefresh(
+            state = swipeRefreshState,
+            onRefresh = { viewModel.loadUserLeaves(userId) }
+        ) {
+            if (viewModel.leaveRequests.isEmpty() && !isRefreshing) {
+                Text(
+                    "No sick leave requests found.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray
+                )
+            } else {
+                LazyColumn {
+                    items(viewModel.leaveRequests) { leave ->
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            elevation = CardDefaults.elevatedCardElevation(4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text("From: ${leave.fromDate}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("To: ${leave.toDate}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Text("Status: ${leave.status.capitalize()}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            }
                         }
                     }
-
                 }
             }
         }
     }
-
-    LaunchedEffect(true) {
-        viewModel.loadUserLeaves(userId)
-    }
 }
+
 
 @Composable
 fun DatePickerBox(label: String, selectedDate: LocalDate?, onDateSelected: (LocalDate) -> Unit) {

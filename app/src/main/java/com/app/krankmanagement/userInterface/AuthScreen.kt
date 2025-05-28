@@ -47,8 +47,8 @@ import com.app.krankmanagement.viewModel.AuthViewModel
 
 @Composable
 fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (UserProfile) -> Unit) {
-    var email by remember { mutableStateOf("ali123@gmail.com") }
-    var password by remember { mutableStateOf("123456") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("employee") }
 
 

@@ -15,11 +15,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.app.krankmanagement.datamodel.TakeOverShift
 import com.app.krankmanagement.viewModel.ShiftViewModel
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+
 
 @Composable
 fun OpenShiftsScreen(viewModel: ShiftViewModel, currentUserId: String) {
     val context = LocalContext.current
     val sharedPref = context.getSharedPreferences("TakeOverPrefs", Context.MODE_PRIVATE)
+
+    val isRefreshing = viewModel.loading.value
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
 
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -29,93 +35,103 @@ fun OpenShiftsScreen(viewModel: ShiftViewModel, currentUserId: String) {
             modifier = Modifier.padding(top = 16.dp)
         )
 
-        if (viewModel.leaveRequests.isEmpty()) {
-            Text("No sick leave requests found.")
-        } else {
-            LazyColumn {
-                items(viewModel.leaveRequests) { leave ->
-                    if (leave.uid != currentUserId && (leave.status != "Accepted" || leave.status != "Rejected")) {
-                        val leaveKey = "${leave.uid}_${leave.fromDate}_${leave.toDate}"
-                        var showButton by remember(leaveKey) {
-                            mutableStateOf(!sharedPref.getBoolean(leaveKey, false))
-                        }
-                        var isLoading by remember { mutableStateOf(false) }
-
-                        ElevatedCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
-                        ) {
-                            Column(Modifier.padding(8.dp)) {
-                                Spacer(modifier = Modifier.padding(vertical = 2.dp))
-                                Text("Employee Mail: ${leave.mail ?: "Unknown"}")
-                                Spacer(modifier = Modifier.padding(vertical = 4.dp))
-                                Text("From: ${leave.fromDate ?: "N/A"}")
-                                Spacer(modifier = Modifier.padding(vertical = 4.dp))
-                                Text("To: ${leave.toDate ?: "N/A"}")
+        SwipeRefresh(
+            state = swipeRefreshState,
+            onRefresh = { viewModel.loadUserLeaves() }
+        ) {
+            if (viewModel.leaveRequests.isEmpty() && !isRefreshing) {
+                Text("No sick leave requests found.")
+            } else {
+                LazyColumn {
+                    items(viewModel.leaveRequests) { leave ->
+                        if (leave.uid != currentUserId) {
+                            val leaveKey = "${leave.uid}_${leave.fromDate}_${leave.toDate}"
+                            var showButton by remember(leaveKey) {
+                                mutableStateOf(!sharedPref.getBoolean(leaveKey, false))
                             }
+                            var isLoading by remember { mutableStateOf(false) }
 
-                            Spacer(modifier = Modifier.padding(vertical = 8.dp))
+                            ElevatedCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                            ) {
+                                Column(Modifier.padding(8.dp)) {
+                                    Spacer(modifier = Modifier.padding(vertical = 2.dp))
+                                    Text("Employee Mail: ${leave.mail ?: "Unknown"}")
+                                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
+                                    Text("From: ${leave.fromDate ?: "N/A"}")
+                                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
+                                    Text("To: ${leave.toDate ?: "N/A"}")
+                                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
+                                    Text("Leave Status: ${leave.status ?: "N/A"}")
+                                }
 
-                            if (showButton) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            isLoading = true
-                                            val takeOverShift = TakeOverShift(
-                                                uid = currentUserId,
-                                                originalUserId = leave.uid ?: "",
-                                                fromDate = leave.fromDate ?: "",
-                                                toDate = leave.toDate ?: "",
-                                                status = "open",
-                                                takenBy = null,
-                                                managerApproved = null
-                                            )
+                                Spacer(modifier = Modifier.padding(vertical = 8.dp))
 
-                                            viewModel.sendTakeOverShift(takeOverShift) { success ->
-                                                isLoading = false
-                                                Toast.makeText(
-                                                    context,
-                                                    if (success) "Request sent!" else "Failed to send request.",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-
-                                                if (success) {
-                                                    showButton = false
-                                                    sharedPref.edit()
-                                                        .putBoolean(leaveKey, true)
-                                                        .apply()
-                                                }
-                                            }
-                                        },
-                                        enabled = !isLoading,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF00704A),
-                                            disabledContainerColor = Color(0xFF00704A),
-                                            contentColor = Color.White,
-                                            disabledContentColor = Color.White
-                                        ),
-                                        shape = RoundedCornerShape(12.dp),
+                                if (showButton ) {
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(50.dp)
+                                            .padding(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        if (isLoading) {
-                                            CircularProgressIndicator(
-                                                color = Color.White,
-                                                modifier = Modifier.size(20.dp),
-                                                strokeWidth = 2.dp
-                                            )
-                                        } else {
-                                            Text("Apply")
+                                        if(leave.status == "Accepted" ){
+                                            Button(
+                                                onClick = {
+                                                    isLoading = true
+                                                    val takeOverShift = TakeOverShift(
+                                                        uid = currentUserId,
+                                                        originalUserId = leave.uid ?: "",
+                                                        fromDate = leave.fromDate ?: "",
+                                                        toDate = leave.toDate ?: "",
+                                                        status = "open",
+                                                        takenBy = null,
+                                                        managerApproved = null
+                                                    )
+
+                                                    viewModel.sendTakeOverShift(takeOverShift) { success ->
+                                                        isLoading = false
+                                                        Toast.makeText(
+                                                            context,
+                                                            if (success) "Request sent!" else "Failed to send request.",
+                                                            Toast.LENGTH_SHORT
+                                                        ).show()
+
+                                                        if (success) {
+                                                            showButton = false
+                                                            sharedPref.edit()
+                                                                .putBoolean(leaveKey, true)
+                                                                .apply()
+                                                        }
+                                                    }
+                                                },
+                                                enabled = !isLoading,
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = Color(0xFF00704A),
+                                                    disabledContainerColor = Color(0xFF00704A),
+                                                    contentColor = Color.White,
+                                                    disabledContentColor = Color.White
+                                                ),
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(50.dp)
+                                            ) {
+                                                if (isLoading) {
+                                                    CircularProgressIndicator(
+                                                        color = Color.White,
+                                                        modifier = Modifier.size(20.dp),
+                                                        strokeWidth = 2.dp
+                                                    )
+                                                } else {
+                                                    Text("Apply")
+                                                }
+                                            }
                                         }
+
                                     }
                                 }
                             }
