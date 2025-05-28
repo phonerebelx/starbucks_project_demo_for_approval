@@ -1,6 +1,5 @@
 package com.app.krankmanagement.userInterface
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,9 +9,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -45,19 +47,21 @@ import com.app.krankmanagement.datamodel.UserProfile
 import com.app.krankmanagement.viewModel.AuthViewModel
 
 
+
 @Composable
-fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (UserProfile) -> Unit) {
+fun AuthScreen(
+    viewModel: AuthViewModel,
+    isRegister: Boolean,
+    onAuthSuccess: (UserProfile) -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("employee") }
-
+    val scrollState = rememberScrollState()
 
     val user by viewModel.user.collectAsState()
 
-
-
     if (viewModel.currentUser.value != null) {
-
         onAuthSuccess(viewModel.currentUser.value!!)
         return
     }
@@ -65,15 +69,16 @@ fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (Us
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFFFF))
+            .background(Color.White)
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 48.dp)
+                .verticalScroll(scrollState)
+                .imePadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Image(
                 painter = painterResource(id = R.drawable.starbucks_logo),
                 contentDescription = "Logo",
@@ -89,12 +94,11 @@ fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (Us
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
-            // White Card
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFFFF)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp),
@@ -129,14 +133,11 @@ fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (Us
                         onValueChange = { password = it },
                         label = { Text("Password") },
                         visualTransformation = PasswordVisualTransformation(),
-                        trailingIcon = {
-                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00704A),
                             unfocusedBorderColor = Color(0xFF00704A),
                             focusedLabelColor = Color(0xFF00704A),
                             unfocusedLabelColor = Color(0xFF00704A)
-
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -146,30 +147,7 @@ fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (Us
                         DropdownMenuBox(role, onRoleChange = { role = it })
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-
-
                     Spacer(modifier = Modifier.height(16.dp))
-
-//                    Button(
-//                        onClick = {
-//                            if (isRegister) viewModel.register(email, password, role)
-//                            else viewModel.login(email, password)
-//                        },
-//                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00704A)),
-//                        shape = RoundedCornerShape(12.dp),
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .height(50.dp)
-//                            .border(
-//                                width = 2.dp,
-//                                color = Color(0xFF00704A),
-//                                shape = RoundedCornerShape(12.dp)
-//                            )
-//                    ) {
-//                        Text(if (isRegister) "Register" else "Login", color = Color(0xFFFFFFFF))
-//                    }
 
                     Button(
                         onClick = {
@@ -200,60 +178,17 @@ fun AuthScreen(viewModel: AuthViewModel, isRegister: Boolean, onAuthSuccess: (Us
                                 modifier = Modifier.size(20.dp)
                             )
                         } else {
-                            Text(if (isRegister) "Register" else "Login", color = Color(0xFFFFFFFF))
+                            Text(if (isRegister) "Register" else "Login")
                         }
                     }
-
-
 
                     viewModel.error.value?.let {
                         Text(it, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(48.dp)) // Extra padding for keyboard
         }
     }
 }
-
-
-//@Composable
-//fun AuthScreen(viewModel: AuthViewModel,isRegister: Boolean, onAuthSuccess: (UserProfile) -> Unit) {
-//    var email by remember { mutableStateOf("") }
-//    var password by remember { mutableStateOf("") }
-////    var isRegister by remember { mutableStateOf(false) }
-//    var role by remember { mutableStateOf("employee") }
-//
-//    if (viewModel.currentUser.value != null) {
-//        onAuthSuccess(viewModel.currentUser.value!!)
-//        return
-//    }
-//
-//    Column(modifier = Modifier.padding(16.dp)) {
-//        Text(text = if (isRegister) "Register" else "Login", style = MaterialTheme.typography.headlineSmall)
-//
-//        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
-//        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") })
-//
-//        if (isRegister) {
-//            DropdownMenuBox(role, onRoleChange = { role = it })
-//        }
-//
-//        Button(
-//            onClick = {
-//                if (isRegister) viewModel.register(email, password, role)
-//                else viewModel.login(email, password)
-//            },
-//            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-//        ) {
-//            Text(if (isRegister) "Register" else "Login")
-//        }
-//
-////        TextButton(onClick = { isRegister = !isRegister }) {
-////            Text(if (isRegister) "Already have an account? Login" else "Don't have an account? Register")
-////        }
-//
-//        viewModel.error.value?.let {
-//            Text(it, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
-//        }
-//    }
-//}
