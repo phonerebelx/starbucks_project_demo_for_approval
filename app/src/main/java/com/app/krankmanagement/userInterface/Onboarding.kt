@@ -83,7 +83,7 @@ fun StarbucksWelcomeScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Login Button
+
         Button(
             onClick = onLoginClick,
             colors = ButtonDefaults.buttonColors(containerColor = Color.White),

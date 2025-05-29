@@ -31,21 +31,43 @@ class SickLeaveRepository {
                 _sickUserState.value = null
             }
     }
+
+
     fun getAllTakeoverLeavesFromFirebase(
         onResult: (List<TakeOverShift>) -> Unit
     ) {
-        database.getReference("takeOver").addListenerForSingleValueEvent(object : ValueEventListener {
+        val databaseRef = FirebaseDatabase.getInstance().reference
+        databaseRef.child("takeOver").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val takeOverLeaves = mutableListOf<TakeOverShift>()
+                val userMap = mutableMapOf<String, String>() // uid -> email map
 
-                for (child in snapshot.children) {
-                    val shift = child.getValue(TakeOverShift::class.java)
-                    if (shift != null && shift.uid != shift.originalUserId) {
-                        takeOverLeaves.add(shift)
+                // First, fetch all users once to minimize reads
+                databaseRef.child("users").addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(userSnapshot: DataSnapshot) {
+                        for (userChild in userSnapshot.children) {
+                            val uid = userChild.key ?: continue
+                            val email = userChild.child("email").getValue(String::class.java) ?: ""
+                            userMap[uid] = email
+                        }
+
+                        // Now process takeOver leaves
+                        for (child in snapshot.children) {
+                            val shift = child.getValue(TakeOverShift::class.java)
+                            if (shift != null && shift.uid != shift.originalUserId) {
+                                val takenByUid = shift.takenBy
+                                shift.mail = userMap[takenByUid] ?: "" // Set email from uid
+                                takeOverLeaves.add(shift)
+                            }
+                        }
+
+                        onResult(takeOverLeaves)
                     }
-                }
 
-                onResult(takeOverLeaves)
+                    override fun onCancelled(error: DatabaseError) {
+                        onResult(emptyList())
+                    }
+                })
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -53,6 +75,7 @@ class SickLeaveRepository {
             }
         })
     }
+
 
 
     fun loadUserLeaves(userId: String, onResult: (List<SickLeaveRequest>) -> Unit) {

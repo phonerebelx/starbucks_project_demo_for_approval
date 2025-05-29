@@ -1,5 +1,6 @@
 package com.app.krankmanagement.userInterface
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,14 +25,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.app.krankmanagement.viewModel.AuthViewModel
 import com.app.krankmanagement.viewModel.ManagerViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun ManagerHomeScreen(viewModel: ManagerViewModel, navController: NavHostController) {
+fun ManagerHomeScreen(viewModel: ManagerViewModel,authViewModel: AuthViewModel, navController: NavHostController) {
+    val context = LocalContext.current
     Box(modifier = Modifier.fillMaxSize()) {
 
         Column(modifier = Modifier.fillMaxSize()) {
@@ -77,23 +81,23 @@ fun ManagerHomeScreen(viewModel: ManagerViewModel, navController: NavHostControl
             }
         }
 
-        // Floating Action Button
-//        FloatingActionButton(
-//            onClick = {
-//                FirebaseAuth.getInstance().signOut()
-//                navController.navigate("onboarding"){
-//                    popUpTo(0) { inclusive = true }
-//                    launchSingleTop = true
-//                }
-//            },
-//            containerColor = Color(0xFF00796B),
-//            contentColor = Color.White,
-//            modifier = Modifier
-//                .align(Alignment.BottomEnd)
-//                .padding(16.dp)
-//        ) {
-//            Icon(Icons.Default.ExitToApp, contentDescription = "Exit")
-//        }
+        FloatingActionButton(
+            onClick = {
+
+                authViewModel.Logout(context)
+                navController.navigate("onboarding") {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            containerColor = Color(0xFF00796B),
+            contentColor = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 48.dp)
+        ) {
+            Icon(Icons.Default.ExitToApp, contentDescription = "Exit")
+        }
     }
 
     LaunchedEffect(true) {

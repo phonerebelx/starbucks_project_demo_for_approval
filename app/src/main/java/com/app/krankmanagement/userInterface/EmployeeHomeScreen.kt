@@ -1,12 +1,15 @@
 package com.app.krankmanagement.userInterface
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -16,6 +19,7 @@ import com.app.krankmanagement.viewModel.AuthViewModel
 fun EmployeeHomeScreen(viewmodel: AuthViewModel,userId: String,navController: NavController) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("My Leave", "Available Shifts","Takeover")
+    val context = LocalContext.current
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -53,8 +57,24 @@ fun EmployeeHomeScreen(viewmodel: AuthViewModel,userId: String,navController: Na
             when (selectedTab) {
                 0 -> SickLeaveScreen(viewModel = viewModel(), userId = userId)
                 1 -> OpenShiftsScreen(viewModel = viewModel(), currentUserId = userId)
-                2->CurrentTakeover(viewModel = viewModel())
+                2-> CurrentTakeover(viewModel = viewModel())
             }
+        }
+        FloatingActionButton(
+            onClick = {
+                viewmodel.Logout(context)
+                navController.navigate("onboarding") {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            containerColor = Color(0xFF00796B),
+            contentColor = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 48.dp)
+        ) {
+            Icon(Icons.Default.ExitToApp, contentDescription = "Exit")
         }
 
 

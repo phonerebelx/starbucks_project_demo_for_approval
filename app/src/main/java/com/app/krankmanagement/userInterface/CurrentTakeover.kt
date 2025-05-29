@@ -1,5 +1,6 @@
 package com.app.krankmanagement.userInterface
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -74,37 +76,71 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp),
                             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.White
-                            )
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            Column(Modifier.padding(12.dp)) {
+                            Column(Modifier.padding(16.dp)) {
                                 Text(
-                                    "UID: ${leave.originalUserId}",
+                                    text = "Taken By: ${leave.mail ?: "Unknown"}",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "From: ${leave.fromDate}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "To: ${leave.toDate}", fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "Status: ${leave.status.capitalize()}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
                                 )
 
+                                Spacer(Modifier.height(8.dp))
+
+                                Text(
+                                    text = "From: ${leave.fromDate ?: "N/A"}",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.DarkGray
+                                )
+
+                                Spacer(Modifier.height(8.dp))
+
+                                Text(
+                                    text = "To: ${leave.toDate ?: "N/A"}",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.DarkGray
+                                )
+
+                                Spacer(Modifier.height(8.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Status: ",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        text = leave.status?.replaceFirstChar { it.uppercaseChar() } ?: "N/A",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = when (leave.status?.lowercase()) {
+                                            "accepted" -> Color(0xFF4CAF50)
+                                            "rejected" -> Color(0xFFF44336)
+                                            "pending" -> Color(0xFFFF9800)
+                                            else -> Color.Gray
+                                        },
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                color = when (leave.status?.lowercase()) {
+                                                    "accepted" -> Color(0x334CAF50)
+                                                    "rejected" -> Color(0x33F44336)
+                                                    "pending" -> Color(0x33FF9800)
+                                                    else -> Color(0x33000000)
+                                                }
+                                            )
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
                         }
+
                     }
                 }
             }

@@ -1,5 +1,6 @@
 package com.app.krankmanagement.userInterface
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -62,6 +63,7 @@ fun AuthScreen(
     val user by viewModel.user.collectAsState()
 
     if (viewModel.currentUser.value != null) {
+        Log.d("AuthScreen: ",viewModel.auth.toString())
         onAuthSuccess(viewModel.currentUser.value!!)
         return
     }

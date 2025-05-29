@@ -2,21 +2,31 @@ package com.app.krankmanagement.userInterface
 
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.app.krankmanagement.R
 import com.app.krankmanagement.datamodel.TakeOverShift
 import com.app.krankmanagement.viewModel.ShiftViewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 
 @Composable
@@ -58,83 +68,118 @@ fun OpenShiftsScreen(viewModel: ShiftViewModel, currentUserId: String) {
                                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White)
                             ) {
-                                Column(Modifier.padding(8.dp)) {
-                                    Spacer(modifier = Modifier.padding(vertical = 2.dp))
-                                    Text("Employee Mail: ${leave.mail ?: "Unknown"}")
-                                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
-                                    Text("From: ${leave.fromDate ?: "N/A"}")
-                                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
-                                    Text("To: ${leave.toDate ?: "N/A"}")
-                                    Spacer(modifier = Modifier.padding(vertical = 4.dp))
-                                    Text("Leave Status: ${leave.status ?: "N/A"}")
-                                }
-
-                                Spacer(modifier = Modifier.padding(vertical = 8.dp))
-
-                                if (showButton ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        if(leave.status == "Accepted" ){
-                                            Button(
-                                                onClick = {
-                                                    isLoading = true
-                                                    val takeOverShift = TakeOverShift(
-                                                        uid = currentUserId,
-                                                        originalUserId = leave.uid ?: "",
-                                                        fromDate = leave.fromDate ?: "",
-                                                        toDate = leave.toDate ?: "",
-                                                        status = "open",
-                                                        takenBy = null,
-                                                        managerApproved = null
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.baseline_supervised_user_circle_24),
+                                            contentDescription = "User Icon",
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(Color(0xFF00704A), Color(0xFF4CAF50))
                                                     )
-
-                                                    viewModel.sendTakeOverShift(takeOverShift) { success ->
-                                                        isLoading = false
-                                                        Toast.makeText(
-                                                            context,
-                                                            if (success) "Request sent!" else "Failed to send request.",
-                                                            Toast.LENGTH_SHORT
-                                                        ).show()
-
-                                                        if (success) {
-                                                            showButton = false
-                                                            sharedPref.edit()
-                                                                .putBoolean(leaveKey, true)
-                                                                .apply()
-                                                        }
-                                                    }
-                                                },
-                                                enabled = !isLoading,
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = Color(0xFF00704A),
-                                                    disabledContainerColor = Color(0xFF00704A),
-                                                    contentColor = Color.White,
-                                                    disabledContentColor = Color.White
                                                 ),
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(50.dp)
-                                            ) {
-                                                if (isLoading) {
-                                                    CircularProgressIndicator(
-                                                        color = Color.White,
-                                                        modifier = Modifier.size(20.dp),
-                                                        strokeWidth = 2.dp
-                                                    )
-                                                } else {
-                                                    Text("Apply")
+                                            tint = Color.White
+                                        )
+
+                                        Spacer(modifier = Modifier.width(12.dp))
+
+                                        Column {
+                                            Text(
+                                                text = leave.mail ?: "Unknown",
+                                                fontSize = 16.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.Black
+                                            )
+                                            Text(
+                                                text = "Leave Status: ${leave.status?.capitalize() ?: "N/A"}",
+                                                fontSize = 14.sp,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Text(
+                                        text = "From: ${leave.fromDate ?: "N/A"}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    Text(
+                                        text = "To: ${leave.toDate ?: "N/A"}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+
+                                    if (showButton && leave.status == "Accepted") {
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        Button(
+                                            onClick = {
+                                                val firebaseAuth = FirebaseAuth.getInstance()
+                                                val database = FirebaseDatabase.getInstance().reference
+
+                                                val currentUserUid = firebaseAuth.currentUser?.uid
+
+                                                isLoading = true
+                                                val takeOverShift = TakeOverShift(
+                                                    uid = currentUserId,
+                                                    originalUserId = leave.uid ?: "",
+                                                    fromDate = leave.fromDate ?: "",
+                                                    toDate = leave.toDate ?: "",
+                                                    status = "open",
+                                                    takenBy = currentUserUid,
+                                                    managerApproved = null
+                                                )
+
+                                                viewModel.sendTakeOverShift(takeOverShift) { success ->
+                                                    isLoading = false
+                                                    Toast.makeText(
+                                                        context,
+                                                        if (success) "Request sent!" else "Failed to send request.",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+
+                                                    if (success) {
+                                                        showButton = false
+                                                        sharedPref.edit().putBoolean(leaveKey, true).apply()
+                                                    }
                                                 }
+                                            },
+                                            enabled = !isLoading,
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(0xFF00704A),
+                                                disabledContainerColor = Color(0xFF00704A),
+                                                contentColor = Color.White,
+                                                disabledContentColor = Color.White
+                                            ),
+                                            shape = RoundedCornerShape(50),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(50.dp)
+                                        ) {
+                                            if (isLoading) {
+                                                CircularProgressIndicator(
+                                                    color = Color.White,
+                                                    modifier = Modifier.size(20.dp),
+                                                    strokeWidth = 2.dp
+                                                )
+                                            } else {
+                                                Text("Apply")
                                             }
                                         }
-
                                     }
                                 }
                             }
+
                         }
                     }
                 }

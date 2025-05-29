@@ -1,5 +1,7 @@
 package com.app.krankmanagement
+
 import android.Manifest
+import android.content.Context
 import com.app.krankmanagement.userInterface.EmployeeHomeScreen
 import android.content.pm.PackageManager
 import android.os.Build
@@ -10,6 +12,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -20,9 +28,11 @@ import androidx.navigation.navArgument
 import com.app.krankmanagement.userInterface.AuthScreen
 
 import com.app.krankmanagement.userInterface.ManagerHomeScreen
+import com.app.krankmanagement.userInterface.SplashScreen
 import com.app.krankmanagement.userInterface.StarbucksWelcomeScreen
 import com.app.krankmanagement.viewModel.AuthViewModel
 import com.app.krankmanagement.viewModel.ManagerViewModel
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher =
@@ -39,13 +49,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {
-                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED -> {
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED -> {
                     // Permission already granted
                 }
+
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
                     // You can show UI here explaining why permission is needed before requesting
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
+
                 else -> {
                     // Directly request the permission
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -57,16 +72,37 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ShiftBuddyApp()
-            }
         }
+    }
 
 
     @Composable
     fun ShiftBuddyApp() {
+        val context = LocalContext.current
+
         val navController = rememberNavController()
         val authViewModel: AuthViewModel = viewModel()
+        var hasNavigated by remember { mutableStateOf(false) }
+        var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
+
+        LaunchedEffect(Unit) {
+            delay(500)
+            isLoggedIn = authViewModel.checkIfUserIsLoggedIn(context)
+        }
+
+        LaunchedEffect(isLoggedIn) {
+            if (isLoggedIn == true && !hasNavigated) {
+                navController.navigate("auth?isRegistering=false") {
+                    popUpTo("onboarding") { inclusive = true }
+                }
+                hasNavigated = true
+            }
+        }
 
         NavHost(navController, startDestination = "onboarding") {
+            composable("splash"){
+                SplashScreen(navController)
+            }
             composable("onboarding") {
                 StarbucksWelcomeScreen(
                     onLoginClick = {
@@ -83,13 +119,15 @@ class MainActivity : ComponentActivity() {
                 arguments = listOf(navArgument("isRegistering") {
                     type = NavType.BoolType
                     defaultValue = false
-                })
+                }
+                )
             ) {
                 val isRegistering = it.arguments?.getBoolean("isRegistering") ?: false
                 AuthScreen(viewModel = authViewModel, isRegister = isRegistering) { user ->
                     val isManager = user.email == "ali@gmail.com"
                     if (isManager) {
                         navController.navigate("managerHome") {
+
                             popUpTo("auth") { inclusive = true }
                         }
                     } else {
@@ -102,7 +140,12 @@ class MainActivity : ComponentActivity() {
 
             composable("managerHome") {
                 val viewModel: ManagerViewModel = viewModel()
-                ManagerHomeScreen(viewModel = viewModel,navController)
+                val authViewModels: AuthViewModel = viewModel()
+                ManagerHomeScreen(
+                    viewModel = viewModel,
+                    authViewModel = authViewModels,
+                    navController
+                )
 
             }
 
@@ -111,7 +154,11 @@ class MainActivity : ComponentActivity() {
                 arguments = listOf(navArgument("userId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: ""
-                EmployeeHomeScreen(userId = userId, viewmodel = viewModel(), navController = navController)
+                EmployeeHomeScreen(
+                    userId = userId,
+                    viewmodel = viewModel(),
+                    navController = navController
+                )
             }
         }
 
